@@ -12,8 +12,8 @@ namespace AntlrTestRig
     {
         private Dictionary<IToken, RecognitionException> _tokenExceptions;
         private Dictionary<ParserRuleContext, IToken> _contextTokenMapping;
-        private readonly IDictionary<int, string> ruleNames = new Dictionary<int, string>();
         public const String LEXER_START_RULE_NAME = "tokens";
+        private string[] _ruleNames;
 
         public void Process(Assembly[] scanAssemblies, string content, AppArgs appArg)
         {
@@ -44,7 +44,7 @@ namespace AntlrTestRig
                 throw new Exception(string.Format("Parser {0} not found.", appArg.GrammarName));
             var parser = (Parser)Activator.CreateInstance(parserType, new object[] { commonTokenStream });
 
-
+            _ruleNames = parser.RuleNames;
 
             if (appArg.Diagnoctics)
             {
@@ -81,11 +81,7 @@ namespace AntlrTestRig
                 throw err;
             }
 
-            foreach (var item in parser.RuleIndexMap)
-            {
-                ruleNames.Add(item.Value, item.Key);
-            }
-
+            
  
             if (appArg.ShowTree)
             {
@@ -135,7 +131,7 @@ namespace AntlrTestRig
                  
                 }
          
-                model.String = ruleNames[ruleNode.RuleIndex];
+                model.String = _ruleNames[ruleNode.RuleIndex];
             }
 
             for (int i = 0; i < node.ChildCount; i++)
