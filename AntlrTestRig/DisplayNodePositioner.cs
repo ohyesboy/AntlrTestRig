@@ -60,42 +60,32 @@ namespace AntlrTestRig
             if (_startPointOfLevels.Count <= level)
                 _startPointOfLevels.Add(0);
             node.Top = _levelHeight * level;
-            if (node.IsToken)
+            if (node.Children.Count == 0)
             {
-
                 node.Middle = _startPointOfLevels[level] + node.Width / 2;
                 _startPointOfLevels[level] += node.Width;
             }
-
             else
             {
+                //Arrange children's position first, use thier average point as parent's middle point
                 foreach (var child in node.Children)
                 {
                     ArangePosition(child, level + 1);
                 }
 
-                if (node.Children.Count == 0) 
-                {
-                    //If the input has good syntax, a non-terminal node must have children
-                    //however, when there is missing token, the children will be empty
-                    //in this case, node will get its possition just like Tokens(terminal nodes)
-                    node.Middle = _startPointOfLevels[level] + node.Width/2;
+                var childrenMidPoint = node.Children.Average(x => x.Middle);
 
+                //Howerever if parent width is too big that the middle point is right to the center point of children
+                //Then push children to right.
+                if (_startPointOfLevels[level] + node.Width / 2 > childrenMidPoint)
+                {
+                    node.Middle = _startPointOfLevels[level] + node.Width / 2;
+                    var childrenNeedsRightShift = node.Middle - childrenMidPoint;
+                    PushChildrenRight(node, childrenNeedsRightShift, level);
                 }
                 else
                 {
-                    var childrenMidPoint = node.Children.Average(x => x.Middle);
-                    if (_startPointOfLevels[level] + node.Width / 2 > childrenMidPoint)
-                    {
-                        node.Middle = _startPointOfLevels[level] + node.Width / 2;
-                        var childrenNeedsRightShift = node.Middle - childrenMidPoint;
-                        ShiftRight(node, childrenNeedsRightShift, level);
-
-                    }
-                    else
-                    {
-                        node.Middle = childrenMidPoint;
-                    }
+                    node.Middle = childrenMidPoint;
                 }
                
                 _startPointOfLevels[level] = node.Middle + node.Width / 2;
@@ -103,16 +93,15 @@ namespace AntlrTestRig
             }
         }
 
-        private void ShiftRight(DisplayNode displayNode, double amount, int level)
+        private void PushChildrenRight(DisplayNode displayNode, double amount, int level)
         {
             foreach (var child in displayNode.Children)
             {
-
                 child.Middle += amount;
                 if (_startPointOfLevels[level + 1] < child.Middle + child.Width / 2)
                     _startPointOfLevels[level + 1] = child.Middle + child.Width / 2;
 
-                ShiftRight(child, amount, level + 1);
+                PushChildrenRight(child, amount, level + 1);
 
             }
         }
