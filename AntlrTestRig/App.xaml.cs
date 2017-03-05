@@ -105,7 +105,13 @@ namespace AntlrTestRig
                 var encoding = Encoding.Default;
                 if (encodingName != null)
                     encoding = Encoding.GetEncoding(encodingName);
-                return File.ReadAllText(fileName, encoding);
+                using (var fileStream = new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                using (var textReader = new StreamReader(fileStream, encoding))
+                {
+                    var content = textReader.ReadToEnd();
+                    return content;
+                }
+         
             }
 
         }
