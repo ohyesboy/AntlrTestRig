@@ -22,7 +22,7 @@ namespace AntlrTestRig
         public bool SLL;
         public bool Diagnoctics;
         public string Encoding;
-        public List<string> InputFiles = new List<string>();
+        public string InputFile;
     }
 
     /// <summary>
@@ -30,22 +30,34 @@ namespace AntlrTestRig
     /// </summary>
     public partial class App : Application
     {
+        private TestRigCore core  = new TestRigCore();
+        private AppArgs appArg;
+
+        private Assembly[] _assemblies;
         protected override void OnStartup(StartupEventArgs e)
         {
             var args = Environment.GetCommandLineArgs();
-            var appArg = ReadOptionsFromArgs(args);
+            appArg = ReadOptionsFromArgs(args);
             if (appArg == null)
                 ShowErrorAndExit(null);
+            
+            _assemblies = Directory.GetFiles(Environment.CurrentDirectory, "*.dll")
+        .Select(x => Assembly.LoadFile(x)).ToArray();
 
-            string input = ReadInputFromFileOrConsole(appArg.InputFiles.FirstOrDefault(), appArg.Encoding);
+            var file = new FileInfo(appArg.InputFile);
+            FileSystemWatcher watcher = new FileSystemWatcher(file.Directory.FullName, file.Name);
+            watcher.Changed += Watcher_Changed;
+            Process();
+            watcher.EnableRaisingEvents = true;
+        }
 
+        private void Process()
+        {
+            var input = ReadInputFromFileOrConsole(appArg.InputFile, appArg.Encoding);
             try
             {
-                var assemblies = Directory.GetFiles(Environment.CurrentDirectory, "*.dll")
-                    .Select(x=> Assembly.LoadFile(x)).ToArray();
-            
-                new TestRigCore().Process(
-                    assemblies,
+                core.Process(
+                    _assemblies,
                     input,
                     appArg);
             }
@@ -53,8 +65,22 @@ namespace AntlrTestRig
             {
                 ShowErrorAndExit(err.Message);
             }
+        }
+        private void Watcher_Changed(object sender, FileSystemEventArgs e)
+        {
+            try
+            {
+                //Due to some external editor saves the file twice under the hood, this can prevent double event for single file save.
+                ((FileSystemWatcher)sender).EnableRaisingEvents = false;
 
-            Environment.Exit(0);
+                Console.WriteLine("Changes detected in {0}", e.Name);
+                this.Dispatcher.Invoke(Process);
+            }
+
+            finally
+            {
+                ((FileSystemWatcher)sender).EnableRaisingEvents = true;
+            }
         }
 
         private string ReadInputFromFileOrConsole(string fileName, string encodingName)
@@ -107,7 +133,7 @@ namespace AntlrTestRig
                 i++;
                 if (arg[0] != '-')
                 { // input file name
-                    appArg.InputFiles.Add(arg);
+                    appArg.InputFile = arg;
                     continue;
                 }
                 if (arg.Equals("-tree"))

@@ -41,7 +41,7 @@ namespace AntlrTestRig
         {
             if(zoomLevel<=0)
                 throw new ArgumentException("zoomLevel must be > 0");
-
+            canvas.Children.Clear();
             _needWidth = 0;
             _needHeight = 0;
             _lineThickness = zoomLevel * LineThicknessBase;

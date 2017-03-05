@@ -32,8 +32,12 @@ namespace AntlrTestRig
         public MainWindow(DisplayNode model)
         {
             InitializeComponent();
+        }
 
+        public void ShowModel(DisplayNode model)
+        {
             _rootNode = model;
+            nodeTree.Items.Clear();
             PopulateTree(_rootNode, 0);
             view.ShowNodeTree(_rootNode, slider.Value);
         }

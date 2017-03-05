@@ -14,7 +14,7 @@ namespace AntlrTestRig
         private Dictionary<ParserRuleContext, IToken> _contextTokenMapping;
         public const String LEXER_START_RULE_NAME = "tokens";
         private string[] _ruleNames;
-
+        private MainWindow window;
         public void Process(Assembly[] scanAssemblies, string content, AppArgs appArg)
         {
             var input = new AntlrInputStream(content);
@@ -91,8 +91,13 @@ namespace AntlrTestRig
             if (appArg.ShowGui)
             {
                 var model = GetDisplayNodeFromParseTree(rootContext);
-                MainWindow mainWindow = new MainWindow(model);
-                mainWindow.ShowDialog();
+                if (window == null)
+                {
+                    window = new MainWindow(model);
+                    window.Show();
+                }
+                window.ShowModel(model);
+
             }
         }
         private DisplayNode GetDisplayNodeFromParseTree(IParseTree node)
