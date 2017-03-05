@@ -20,8 +20,9 @@ The motivation of this project is that there are some g4 files contains C# code 
 
   * Auto expand to 5 levels in treeview
   * Use different color for terminal nodes
+  * Watch input file change
+  * Show rule index and token type (with -showtype option)
 
-  ​
 
 ## TODO:
 

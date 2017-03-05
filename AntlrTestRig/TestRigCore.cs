@@ -90,7 +90,7 @@ namespace AntlrTestRig
 
             if (appArg.ShowGui)
             {
-                var model = GetDisplayNodeFromParseTree(rootContext);
+                var model = GetDisplayNodeFromParseTree(rootContext, appArg.ShowType);
                 if (window == null)
                 {
                     window = new MainWindow(model);
@@ -100,14 +100,16 @@ namespace AntlrTestRig
 
             }
         }
-        private DisplayNode GetDisplayNodeFromParseTree(IParseTree node)
+        private DisplayNode GetDisplayNodeFromParseTree(IParseTree node, bool showType)
         {
             var model = new DisplayNode();
 
             if (node is TerminalNodeImpl)
             {
                 var tNode = node as TerminalNodeImpl;
-                model.String = tNode.GetText();
+                model.String = tNode.GetText() ;
+                if (showType)
+                    model.String += " = " + tNode.Symbol.Type;
                 model.IsToken = true;
                 if (_tokenExceptions.ContainsKey(tNode.Symbol) || tNode.Symbol.TokenIndex == -1)
                 {
@@ -135,13 +137,15 @@ namespace AntlrTestRig
                     }
                  
                 }
-         
+
                 model.String = _ruleNames[ruleNode.RuleIndex];
+                if (showType)
+                    model.String += " = " + ruleNode.RuleIndex;
             }
 
             for (int i = 0; i < node.ChildCount; i++)
             {
-                var subAstNode = GetDisplayNodeFromParseTree(node.GetChild(i));
+                var subAstNode = GetDisplayNodeFromParseTree(node.GetChild(i), showType);
                 model.Children.Add(subAstNode);
             }
 

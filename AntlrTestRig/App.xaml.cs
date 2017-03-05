@@ -16,6 +16,7 @@ namespace AntlrTestRig
         public string GrammarName;
         public string StartRuleName;
         public bool ShowGui;
+        public bool ShowType;
         public bool ShowTokens;
         public bool ShowTree;
         public bool Trace;
@@ -42,13 +43,16 @@ namespace AntlrTestRig
                 ShowErrorAndExit(null);
             
             _assemblies = Directory.GetFiles(Environment.CurrentDirectory, "*.dll")
-        .Select(x => Assembly.LoadFile(x)).ToArray();
-
-            var file = new FileInfo(appArg.InputFile);
-            FileSystemWatcher watcher = new FileSystemWatcher(file.Directory.FullName, file.Name);
-            watcher.Changed += Watcher_Changed;
+                 .Select(x => Assembly.LoadFile(x)).ToArray();
             Process();
-            watcher.EnableRaisingEvents = true;
+            if (appArg.InputFile != null)
+            {
+                var file = new FileInfo(appArg.InputFile);
+                FileSystemWatcher watcher = new FileSystemWatcher(file.Directory.FullName, file.Name);
+                watcher.Changed += Watcher_Changed;
+                watcher.EnableRaisingEvents = true;
+            }
+          
         }
 
         private void Process()
@@ -169,6 +173,10 @@ namespace AntlrTestRig
                     }
                     appArg.Encoding = args[i];
                     i++;
+                }
+                else if (arg.Equals("-showtype"))
+                {
+                    appArg.ShowType = true;
                 }
             }
 
