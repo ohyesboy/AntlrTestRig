@@ -72,19 +72,8 @@ namespace AntlrTestRig
         }
         private void Watcher_Changed(object sender, FileSystemEventArgs e)
         {
-            try
-            {
-                //Due to some external editor saves the file twice under the hood, this can prevent double event for single file save.
-                ((FileSystemWatcher)sender).EnableRaisingEvents = false;
-
-                Console.WriteLine("Changes detected in {0}", e.Name);
-                this.Dispatcher.Invoke(Process);
-            }
-
-            finally
-            {
-                ((FileSystemWatcher)sender).EnableRaisingEvents = true;
-            }
+            Console.WriteLine("Changes detected in {0}", e.Name);
+            this.Dispatcher.Invoke(Process);
         }
 
         private string ReadInputFromFileOrConsole(string fileName, string encodingName)

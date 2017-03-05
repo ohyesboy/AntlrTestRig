@@ -21,7 +21,7 @@ namespace AntlrTestRig
     public partial class ParseTreeView : UserControl
     {
 
-        private const double LevelHeightBase = 45;
+        private const double LevelHeightBase = 55;
         private const double PaddingBase = 30;
         private const double LineThicknessBase = 1;
         private const double FontSizeBase = 20;
