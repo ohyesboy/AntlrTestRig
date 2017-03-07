@@ -22,7 +22,7 @@ namespace AntlrTestRig
             var lexerType = allTypes
                 .FirstOrDefault(x => x.BaseType == typeof(Lexer) && x.Name.Equals(appArg.GrammarName + "lexer", StringComparison.CurrentCultureIgnoreCase));
             if (lexerType == null)
-                throw new Exception(string.Format("Lexer {0} not found.", appArg.GrammarName));
+                throw new ApplicationException(string.Format("Lexer {0} not found.", appArg.GrammarName));
             var lexer = (Lexer)Activator.CreateInstance(lexerType, new object[] { input });
             var commonTokenStream = new CommonTokenStream(lexer);
             commonTokenStream.Fill();
@@ -41,7 +41,7 @@ namespace AntlrTestRig
             var parserType = allTypes
                 .FirstOrDefault(x => x.BaseType == typeof(Parser) && x.Name.Equals(appArg.GrammarName + "parser", StringComparison.CurrentCultureIgnoreCase));
             if (parserType == null)
-                throw new Exception(string.Format("Parser {0} not found.", appArg.GrammarName));
+                throw new ApplicationException(string.Format("Parser {0} not found.", appArg.GrammarName));
             var parser = (Parser)Activator.CreateInstance(parserType, new object[] { commonTokenStream });
 
             _ruleNames = parser.RuleNames;
@@ -71,6 +71,8 @@ namespace AntlrTestRig
             _contextTokenMapping = errorListener.ContextTokenMapping;
 
             MethodInfo rootMethod = parserType.GetMethod(appArg.StartRuleName);
+            if(rootMethod==null)
+                throw new ApplicationException($"Start rule \"{appArg.StartRuleName}\" does not exist");
             IParseTree rootContext;
             try
             {

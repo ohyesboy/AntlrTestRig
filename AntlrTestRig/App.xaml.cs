@@ -81,7 +81,7 @@ namespace AntlrTestRig
                     input,
                     appArg);
             }
-            catch (Exception err)
+            catch (ApplicationException err)
             {
                 ShowErrorAndExit(err.Message);
             }
@@ -98,7 +98,7 @@ namespace AntlrTestRig
             //this is a ugly solution to an unly situation. Here it sleeps a random time, not too long to freeze the UI,
             //hopefully not to short so the 2nd save finishes.
             Thread.Sleep(100);
-            Console.WriteLine("\r\nInput changes detected in {0} -- {1}", e.Name, DateTime.Now.ToShortTimeString());
+            Console.WriteLine("\r\nInput changes detected in {0} -- {1}", e.Name, DateTime.Now.ToString("hh:mm:ss"));
             this.Dispatcher.Invoke(() => Process(() =>
             {
                 watcher.EnableRaisingEvents = true;
@@ -108,7 +108,7 @@ namespace AntlrTestRig
         {
             var watcher = (FileSystemWatcher)sender;
             watcher.EnableRaisingEvents = false;
-            Console.WriteLine("\r\nDll changes detected in {0} -- {1}", e.Name, DateTime.Now.ToShortTimeString());
+            Console.WriteLine("\r\nDll changes detected in {0} -- {1}", e.Name, DateTime.Now.ToString("hh:mm:ss"));
             LoadDll();
             this.Dispatcher.Invoke(()=>Process(() =>
             {
