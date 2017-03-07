@@ -57,8 +57,17 @@ The motivation of this project is that there are some g4 files contains C# code 
 
 
 
-## Problems you may get
+> If you see compile issues from the generated code, it is usually because either of the 2 reasons:
+>
+> - The antlr4 you setup has different version than the one the runtime dll is (v4.6 now), ANTLR's API may change, keep the version the same. 
+> - The g4 file may contains none C# code injection. In this case, just use the official TestRig
 
-* If you see compile issues from the generated code, it is usually because either of the 2 reasons:
-  * The antlr4 you setup has different version than the one the runtime dll is (v4.6 now), ANTLR's API may change, keep the version the same. 
-  * The g4 file may contains none C# code injection. In this case, just use the official TestRig
+
+
+## Best Practice
+
+Since the TestRig can watch input and dll changes and reload without restart, I recommend have your editor set a shortcut for the scripts to compile a g4 file into dll. I use Npp's NppExec plugin to setup Ctrl+D to build g4 into dll, so I can seamlessly work between the editor and TestRig.
+
+The highlight for g4 comes from [https://github.com/B1naryStudio/antlr-npp](https://github.com/B1naryStudio/antlr-npp)
+
+![npp](readmeDocs/npp.png)

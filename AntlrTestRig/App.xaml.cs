@@ -91,7 +91,7 @@ namespace AntlrTestRig
         {
             var watcher = (FileSystemWatcher)sender;
             watcher.EnableRaisingEvents = false;
-            Console.WriteLine("Input changes detected in {0}", e.Name);
+            Console.WriteLine("\r\nInput changes detected in {0} -- {1}", e.Name, DateTime.Now.ToShortTimeString());
             this.Dispatcher.Invoke(() => Process(() =>
             {
                 watcher.EnableRaisingEvents = true;
@@ -101,7 +101,7 @@ namespace AntlrTestRig
         {
             var watcher = (FileSystemWatcher)sender;
             watcher.EnableRaisingEvents = false;
-            Console.WriteLine("Dll changes detected in {0}", e.Name);
+            Console.WriteLine("\r\nDll changes detected in {0} -- {1}", e.Name, DateTime.Now.ToShortTimeString());
             LoadDll();
             this.Dispatcher.Invoke(()=>Process(() =>
             {
