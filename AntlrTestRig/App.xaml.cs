@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 
@@ -91,6 +92,12 @@ namespace AntlrTestRig
         {
             var watcher = (FileSystemWatcher)sender;
             watcher.EnableRaisingEvents = false;
+
+            //TODO: 
+            //Some editors (npp or notepad) saves file twice, and the first time they save, the file may not be ready yet,
+            //this is a ugly solution to an unly situation. Here it sleeps a random time, not too long to freeze the UI,
+            //hopefully not to short so the 2nd save finishes.
+            Thread.Sleep(100);
             Console.WriteLine("\r\nInput changes detected in {0} -- {1}", e.Name, DateTime.Now.ToShortTimeString());
             this.Dispatcher.Invoke(() => Process(() =>
             {
