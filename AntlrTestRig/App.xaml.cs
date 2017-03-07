@@ -41,21 +41,36 @@ namespace AntlrTestRig
             appArg = ReadOptionsFromArgs(args);
             if (appArg == null)
                 ShowErrorAndExit(null);
-            
-            _assemblies = Directory.GetFiles(Environment.CurrentDirectory, "*.dll")
-                 .Select(x => Assembly.LoadFile(x)).ToArray();
+
+            LoadDll();
             Process();
+
             if (appArg.InputFile != null)
             {
                 var file = new FileInfo(appArg.InputFile);
-                FileSystemWatcher watcher = new FileSystemWatcher(file.Directory.FullName, file.Name);
-                watcher.Changed += Watcher_Changed;
-                watcher.EnableRaisingEvents = true;
+                FileSystemWatcher inputWatcher = new FileSystemWatcher(file.Directory.FullName, file.Name);
+                inputWatcher.Changed += Watcher_Changed;
+                inputWatcher.EnableRaisingEvents = true;
+
+                FileSystemWatcher dllWatcher = new FileSystemWatcher(file.Directory.FullName, "*.dll");
+                dllWatcher.Changed += DllWatcher_Changed;
+                dllWatcher.EnableRaisingEvents = true;
             }
           
         }
 
-        private void Process()
+        private void LoadDll()
+        {
+            _assemblies = Directory.GetFiles(Environment.CurrentDirectory, "*.dll")
+                .Select(x =>
+                {
+                    byte[] assemblyBytes = File.ReadAllBytes(x);
+                    var assembly = Assembly.Load(assemblyBytes);
+                    return assembly;
+                }).ToArray();
+        }
+
+        private void Process(Action callback = null)
         {
             var input = ReadInputFromFileOrConsole(appArg.InputFile, appArg.Encoding);
             try
@@ -69,13 +84,30 @@ namespace AntlrTestRig
             {
                 ShowErrorAndExit(err.Message);
             }
+            if (callback != null)
+                callback();
         }
         private void Watcher_Changed(object sender, FileSystemEventArgs e)
         {
-            Console.WriteLine("Changes detected in {0}", e.Name);
-            this.Dispatcher.Invoke(Process);
+            var watcher = (FileSystemWatcher)sender;
+            watcher.EnableRaisingEvents = false;
+            Console.WriteLine("Input changes detected in {0}", e.Name);
+            this.Dispatcher.Invoke(() => Process(() =>
+            {
+                watcher.EnableRaisingEvents = true;
+            }));
         }
-
+        private void DllWatcher_Changed(object sender, FileSystemEventArgs e)
+        {
+            var watcher = (FileSystemWatcher)sender;
+            watcher.EnableRaisingEvents = false;
+            Console.WriteLine("Dll changes detected in {0}", e.Name);
+            LoadDll();
+            this.Dispatcher.Invoke(()=>Process(() =>
+            {
+                watcher.EnableRaisingEvents = true;
+            }));
+        }
         private string ReadInputFromFileOrConsole(string fileName, string encodingName)
         {
             if (fileName == null)
