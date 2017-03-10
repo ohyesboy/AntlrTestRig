@@ -34,7 +34,10 @@ namespace AntlrTestRig
     {
         private TestRigCore core  = new TestRigCore();
         private AppArgs appArg;
-
+        private List<string> DllBlackList = new List<string>()
+        {
+            "Antlr4.Runtime.Standard.dll"
+        }; 
         private Assembly[] _assemblies;
         protected override void OnStartup(StartupEventArgs e)
         {
@@ -62,10 +65,23 @@ namespace AntlrTestRig
 
         private void LoadDll()
         {
+           
             _assemblies = Directory.GetFiles(Environment.CurrentDirectory, "*.dll")
+                .Where(x => (!DllBlackList.Contains(Path.GetFileName(x))))
                 .Select(x =>
                 {
-                    byte[] assemblyBytes = File.ReadAllBytes(x);
+                    
+                    GC.Collect();// make sure no dll is locked by any object not collected.
+                    byte[] assemblyBytes = null;
+                    try
+                    {
+                        assemblyBytes = File.ReadAllBytes(x);
+                    }
+                    catch (IOException err)
+                    {
+                        
+                    }
+                
                     var assembly = Assembly.Load(assemblyBytes);
                     return assembly;
                 }).ToArray();
