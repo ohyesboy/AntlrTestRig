@@ -111,7 +111,7 @@ namespace AntlrTestRig
                         Console.WriteLine("missing encoding on -folder");
                         return null;
                     }
-                    appArg.TargetFolder = args[i];
+                    appArg.Folder = args[i];
                     i++;
                 }
                 else if (arg.Equals("-showtype"))

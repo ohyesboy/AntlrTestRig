@@ -34,7 +34,7 @@ namespace AntlrTestRig
             InitializeComponent();
         }
 
-        public void ShowModel(DisplayNode model)
+        public void UpdateModel(DisplayNode model)
         {
             _rootNode = model;
             nodeTree.Items.Clear();

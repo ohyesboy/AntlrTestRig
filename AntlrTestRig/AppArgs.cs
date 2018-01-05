@@ -1,6 +1,9 @@
-﻿namespace AntlrTestRig
+﻿using System;
+
+namespace AntlrTestRig
 {
-    class AppArgs
+    [Serializable]
+    public class AppArgs
     {
         public string GrammarName;
         public string StartRuleName;
@@ -15,6 +18,6 @@
         public string InputFile;
         //Grammar dll folder, can be absolute or relative (to current folder),
         //if not set, will use current folder.
-        public string TargetFolder; 
+        public string Folder; 
     }
 }

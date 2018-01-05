@@ -1,10 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using Antlr4.Runtime;
 
 namespace AntlrTestRig
 {
+    [Serializable]
     public class DisplayNode
     {
         public double Width; //This cinludes the string width and padding

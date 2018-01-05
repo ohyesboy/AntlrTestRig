@@ -71,6 +71,9 @@
     <Compile Include="ParseTreeView.xaml.cs">
       <DependentUpon>ParseTreeView.xaml</DependentUpon>
     </Compile>
+    <Compile Include="NewDomainProxyCreator.cs" />
+    <Compile Include="Proxy.cs" />
+    <Compile Include="ProxyCreator.cs" />
     <Compile Include="TestRigCore.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>

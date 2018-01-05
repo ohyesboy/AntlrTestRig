@@ -17,49 +17,51 @@ namespace AntlrTestRig
     /// </summary>
     public partial class App : Application
     {
-        private TestRigCore core  = new TestRigCore();
-        private AppArgs appArg;
+        private TestRigCore _core;
+        private AppArgs _args;
 
-
-        private string dllDir;
-        
         protected override void OnStartup(StartupEventArgs e)
         {
             var args = Environment.GetCommandLineArgs();
-            appArg = AppArgHelper.ReadOptionsFromArgs(args);
-            if (appArg == null)
+            _args = AppArgHelper.ReadOptionsFromArgs(args);
+            if (_args == null)
                 ShowErrorAndExit(null);
 
-            dllDir = Environment.CurrentDirectory;
-            if (!string.IsNullOrEmpty(appArg.TargetFolder))
-            {
-                if (!Path.IsPathRooted(appArg.TargetFolder))
-                {
-                    dllDir = Path.Combine(dllDir, appArg.TargetFolder);
-                }
-                else
-                {
-                    dllDir = appArg.TargetFolder;
-                }
-            }
-            core.Input = AppArgHelper.ReadInputFromFileOrConsole(appArg.InputFile, appArg.Encoding);
-            core.LoadDll(dllDir);
-            core.ParseAndShowResult(appArg);
+            CalculateAbsolutTargetFolder();
+            _core = new TestRigCore();// _proxyCreator.CreateProxyInNewDomain<TestRigCore>("newDomain");
+            var input = AppArgHelper.ReadInputFromFileOrConsole(_args.InputFile, _args.Encoding);
+            _core.LoadDlls(_args.Folder);
+            _core.ProcessInput(input, _args);
 
-            if (appArg.InputFile != null)
+            if (_args.InputFile != null)
             {
-                var file = new FileInfo(appArg.InputFile);
+                var file = new FileInfo(_args.InputFile);
                 FileSystemWatcher inputWatcher = new FileSystemWatcher(file.Directory.FullName, file.Name);
-                inputWatcher.Changed += CreateWatcherEventHandler(null, 0.1f, true, false);
+                inputWatcher.Changed += CreateWatcherEventHandler(null, 0.1f, false);
                 inputWatcher.EnableRaisingEvents = true;
             }
 
-            FileSystemWatcher dllWatcher = new FileSystemWatcher(dllDir, "*.dll");
-            dllWatcher.Changed += CreateWatcherEventHandler("Reloading dlls in 1 second", 1, false, true);
+            FileSystemWatcher dllWatcher = new FileSystemWatcher(_args.Folder, "*.dll");
+            dllWatcher.Changed += CreateWatcherEventHandler("Reloading dlls in 1 second", 1, true);
             dllWatcher.EnableRaisingEvents = true;
         }
 
-        private FileSystemEventHandler CreateWatcherEventHandler(string message, float sleepSecond, bool loadInput, bool loadDll)
+        private void CalculateAbsolutTargetFolder()
+        {
+            if (!string.IsNullOrEmpty(_args.Folder))
+            {
+                if (!Path.IsPathRooted(_args.Folder))
+                {
+                    _args.Folder = Path.Combine(Environment.CurrentDirectory, _args.Folder);
+                }
+            }
+            else
+            {
+                _args.Folder = Environment.CurrentDirectory;
+            }
+        }
+
+        private FileSystemEventHandler CreateWatcherEventHandler(string message, float sleepSecond, bool loadDll)
         {
             FileSystemEventHandler handler = (object sender, FileSystemEventArgs e) =>
             {
@@ -74,13 +76,12 @@ namespace AntlrTestRig
                 Console.WriteLine("[{1}] File change in '{0}'.", e.Name, DateTime.Now.ToString("hh:mm:ss"));
                 if (message!=null)
                     Console.WriteLine(message);
-                if(loadInput)
-                    core.Input = AppArgHelper.ReadInputFromFileOrConsole(appArg.InputFile, appArg.Encoding);
+                var input = AppArgHelper.ReadInputFromFileOrConsole(_args.InputFile, _args.Encoding);
                 if (loadDll)
-                    core.LoadDll(dllDir);
+                    _core.LoadDlls(_args.Folder);
                 this.Dispatcher.Invoke(() =>
                 {
-                    core.ParseAndShowResult(appArg);
+                    _core.ProcessInput(input, _args);
                     watcher.EnableRaisingEvents = true;
                 });
             };
