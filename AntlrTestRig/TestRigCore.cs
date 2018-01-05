@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using Antlr4.Runtime;
@@ -15,10 +16,42 @@ namespace AntlrTestRig
         public const String LEXER_START_RULE_NAME = "tokens";
         private string[] _ruleNames;
         private MainWindow window;
-        public void Process(Assembly[] scanAssemblies, string content, AppArgs appArg)
+        private Assembly[] _assemblies;
+        private List<string> DllBlackList = new List<string>()
         {
-            var input = new AntlrInputStream(content);
-            var allTypes = scanAssemblies.SelectMany(x=>x.GetTypes()).ToArray();
+            "Antlr4.Runtime.Standard.dll"
+        };
+
+        public string Input { get; set; }
+
+        public void LoadDll(string dllDir)
+        {
+            _assemblies = Directory.GetFiles(dllDir, "*.dll")
+                .Where(x => (!DllBlackList.Contains(Path.GetFileName(x))))
+                .Select(x =>
+                {
+
+                    GC.Collect();// make sure no dll is locked by any object not collected.
+                    byte[] assemblyBytes = null;
+                    try
+                    {
+                        assemblyBytes = File.ReadAllBytes(x);
+                    }
+                    catch (IOException err)
+                    {
+
+                    }
+
+                    var assembly = Assembly.Load(assemblyBytes);
+                    return assembly;
+                }).ToArray();
+        }
+
+
+        public void ParseAndShowResult(AppArgs appArg)
+        {
+            var input = new AntlrInputStream(Input);
+            var allTypes = _assemblies.SelectMany(x=>x.GetTypes()).ToArray();
             var lexerType = allTypes
                 .FirstOrDefault(x => x.BaseType == typeof(Lexer) && x.Name.Equals(appArg.GrammarName + "lexer", StringComparison.CurrentCultureIgnoreCase));
             if (lexerType == null)

@@ -12,24 +12,6 @@ using System.Windows;
 
 namespace AntlrTestRig
 {
-    class AppArgs
-    {
-        public string GrammarName;
-        public string StartRuleName;
-        public bool ShowGui;
-        public bool ShowType;
-        public bool ShowTokens;
-        public bool ShowTree;
-        public bool Trace;
-        public bool SLL;
-        public bool Diagnoctics;
-        public string Encoding;
-        public string InputFile;
-        //Grammar dll folder, can be absolute or relative (to current folder),
-        //if not set, will use current folder.
-        public string TargetFolder; 
-    }
-
     /// <summary>
     /// Interaction logic for App.xaml
     /// </summary>
@@ -37,17 +19,14 @@ namespace AntlrTestRig
     {
         private TestRigCore core  = new TestRigCore();
         private AppArgs appArg;
-        private List<string> DllBlackList = new List<string>()
-        {
-            "Antlr4.Runtime.Standard.dll"
-        };
+
 
         private string dllDir;
-        private Assembly[] _assemblies;
+        
         protected override void OnStartup(StartupEventArgs e)
         {
             var args = Environment.GetCommandLineArgs();
-            appArg = ReadOptionsFromArgs(args);
+            appArg = AppArgHelper.ReadOptionsFromArgs(args);
             if (appArg == null)
                 ShowErrorAndExit(null);
 
@@ -63,206 +42,50 @@ namespace AntlrTestRig
                     dllDir = appArg.TargetFolder;
                 }
             }
-
-            LoadDll(dllDir);
-            Process();
+            core.Input = AppArgHelper.ReadInputFromFileOrConsole(appArg.InputFile, appArg.Encoding);
+            core.LoadDll(dllDir);
+            core.ParseAndShowResult(appArg);
 
             if (appArg.InputFile != null)
             {
                 var file = new FileInfo(appArg.InputFile);
                 FileSystemWatcher inputWatcher = new FileSystemWatcher(file.Directory.FullName, file.Name);
-                inputWatcher.Changed += Watcher_Changed;
+                inputWatcher.Changed += CreateWatcherEventHandler(null, 0.1f, true, false);
                 inputWatcher.EnableRaisingEvents = true;
-
-               
-                FileSystemWatcher dllWatcher = new FileSystemWatcher(dllDir, "*.dll");
-                dllWatcher.Changed += DllWatcher_Changed;
-                dllWatcher.EnableRaisingEvents = true;
             }
-          
+
+            FileSystemWatcher dllWatcher = new FileSystemWatcher(dllDir, "*.dll");
+            dllWatcher.Changed += CreateWatcherEventHandler("Reloading dlls in 1 second", 1, false, true);
+            dllWatcher.EnableRaisingEvents = true;
         }
 
-        private void LoadDll(string dllDir)
+        private FileSystemEventHandler CreateWatcherEventHandler(string message, float sleepSecond, bool loadInput, bool loadDll)
         {
-            _assemblies = Directory.GetFiles(dllDir, "*.dll")
-                .Where(x => (!DllBlackList.Contains(Path.GetFileName(x))))
-                .Select(x =>
-                {
-                    
-                    GC.Collect();// make sure no dll is locked by any object not collected.
-                    byte[] assemblyBytes = null;
-                    try
-                    {
-                        assemblyBytes = File.ReadAllBytes(x);
-                    }
-                    catch (IOException err)
-                    {
-                        
-                    }
-                
-                    var assembly = Assembly.Load(assemblyBytes);
-                    return assembly;
-                }).ToArray();
-        }
-
-        private void Process(Action callback = null)
-        {
-            var input = ReadInputFromFileOrConsole(appArg.InputFile, appArg.Encoding);
-            try
+            FileSystemEventHandler handler = (object sender, FileSystemEventArgs e) =>
             {
-                core.Process(
-                    _assemblies,
-                    input,
-                    appArg);
-            }
-            catch (ApplicationException err)
-            {
-                ShowErrorAndExit(err.Message);
-            }
-            callback?.Invoke();
-        }
-        private void Watcher_Changed(object sender, FileSystemEventArgs e)
-        {
-            var watcher = (FileSystemWatcher)sender;
-            watcher.EnableRaisingEvents = false;
+                var watcher = (FileSystemWatcher)sender;
+                watcher.EnableRaisingEvents = false;
 
-            //TODO: 
-            //Some editors (npp or notepad) saves file twice, and the first time they save, the file may not be ready yet,
-            //this is a ugly solution to an unly situation. Here it sleeps a random time, not too long to freeze the UI,
-            //hopefully not to short so the 2nd save finishes.
-            Thread.Sleep(100);
-            Console.WriteLine("\r\nInput changes detected in {0} -- {1}", e.Name, DateTime.Now.ToString("hh:mm:ss"));
-            this.Dispatcher.Invoke(() => Process(() =>
-            {
-                watcher.EnableRaisingEvents = true;
-            }));
-        }
-        private void DllWatcher_Changed(object sender, FileSystemEventArgs e)
-        {
-            var watcher = (FileSystemWatcher)sender;
-            watcher.EnableRaisingEvents = false;
+                //TODO: 
+                //Some editors (npp or notepad) saves file twice, and the first time they save, the file may not be ready yet,
+                //this is a ugly solution to an unly situation. Here it sleeps a random time, not too long to freeze the UI,
+                //hopefully not to short so the 2nd save finishes.
+                Thread.Sleep((int)(sleepSecond*1000));
+                Console.WriteLine("[{1}] File change in '{0}'.", e.Name, DateTime.Now.ToString("hh:mm:ss"));
+                if (message!=null)
+                    Console.WriteLine(message);
+                if(loadInput)
+                    core.Input = AppArgHelper.ReadInputFromFileOrConsole(appArg.InputFile, appArg.Encoding);
+                if (loadDll)
+                    core.LoadDll(dllDir);
+                this.Dispatcher.Invoke(() =>
+                {
+                    core.ParseAndShowResult(appArg);
+                    watcher.EnableRaisingEvents = true;
+                });
+            };
 
-            int reloadDelay = 1; //when the first dll file changed, there may be other dlls being compiled
-            Console.WriteLine("\r\nDll changes detected in {0} -- {1}, reloading dlls in {2} seconds", e.Name, DateTime.Now.ToString("hh:mm:ss"), reloadDelay);
-            Thread.Sleep(reloadDelay*1000);
-            LoadDll(dllDir);
-            this.Dispatcher.Invoke(()=>Process(() =>
-            {
-                watcher.EnableRaisingEvents = true;
-            }));
-        }
-        private string ReadInputFromFileOrConsole(string fileName, string encodingName)
-        {
-            if (fileName == null)
-            {
-                Console.WriteLine("Enter the input, end with Ctrl+Z and Enter");
-                StringBuilder sb = new StringBuilder();
-                string line;
-                while ((line = Console.ReadLine()) != null)
-                {
-                    sb.AppendLine(line);
-                }
-                return sb.ToString();
-            }
-            else
-            {
-                var encoding = Encoding.Default;
-                if (encodingName != null)
-                    encoding = Encoding.GetEncoding(encodingName);
-                using (var fileStream = new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                using (var textReader = new StreamReader(fileStream, encoding))
-                {
-                    var content = textReader.ReadToEnd();
-                    return content;
-                }
-         
-            }
-
-        }
-
-        private AppArgs ReadOptionsFromArgs(string[] args)
-        {
-            var appArg = new AppArgs();
-            if (args.Length < 3)
-            {
-                StringBuilder sb = new StringBuilder();
-                sb.AppendLine("AntlrTestRig.exe GrammarName startRuleName\n" +
-                                   "  [-tokens] [-tree] [-gui] [-ps file.ps] [-encoding encodingname]\n" +
-                                   "  [-trace] [-diagnostics] [-SLL]\n" +
-                                   "  [-folder]\n" +
-                                   "  [input-filename(s)]");
-                sb.AppendLine("Use startRuleName='tokens' if GrammarName is a lexer grammar.");
-                sb.AppendLine("Omitting input-filename makes rig read from stdin, end with Ctrl+Z and Enter");
-                Console.WriteLine(sb.ToString());
-                return null;
-            }
-
-            int i = 1; //starts with 1, the 0 is the app file itself
-            appArg.GrammarName = args[i];
-            i++;
-            appArg.StartRuleName = args[i];
-            i++;
-            while (i < args.Length)
-            {
-                String arg = args[i];
-                i++;
-                if (arg[0] != '-')
-                { // input file name
-                    appArg.InputFile = arg;
-                    continue;
-                }
-                if (arg.Equals("-tree"))
-                {
-                    appArg.ShowTree = true;
-                }
-                if (arg.Equals("-gui"))
-                {
-                    appArg.ShowGui = true;
-                }
-                if (arg.Equals("-tokens"))
-                {
-                    appArg.ShowTokens = true;
-                }
-                else if (arg.Equals("-trace"))
-                {
-                    appArg.Trace = true;
-                }
-                else if (arg.Equals("-SLL"))
-                {
-                    appArg.SLL = true;
-                }
-                else if (arg.Equals("-diagnostics"))
-                {
-                    appArg.Diagnoctics = true;
-                }
-                else if (arg.Equals("-encoding"))
-                {
-                    if (i >= args.Length)
-                    {
-                        Console.WriteLine("missing encoding on -encoding");
-                        return null;
-                    }
-                    appArg.Encoding = args[i];
-                    i++;
-                }
-
-                else if (arg.Equals("-folder"))
-                {
-                    if (i >= args.Length)
-                    {
-                        Console.WriteLine("missing encoding on -folder");
-                        return null;
-                    }
-                    appArg.TargetFolder = args[i];
-                    i++;
-                }
-                else if (arg.Equals("-showtype"))
-                {
-                    appArg.ShowType = true;
-                }
-            }
-
-            return appArg;
+            return handler;
         }
 
         private void ShowErrorAndExit(string msg)

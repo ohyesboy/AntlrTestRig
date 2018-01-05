@@ -29,6 +29,7 @@
         </Slider>
         <GridSplitter Grid.RowSpan="2" Grid.Row="0" Grid.Column="0" Width="5"  />
         <Button x:Name="button_Copy" Content="Export as PNG" Grid.Column="1" Margin="10.4,30,0,0" Grid.Row="1" VerticalAlignment="Top" Height="20" HorizontalAlignment="Left" Width="93" Click="button_Copy_Click"/>
+        <Label Name="lbLastContext" Content="Last context:" Grid.Column="1" HorizontalAlignment="Left" Height="25" Margin="454.4,35,0,0" Grid.Row="1" VerticalAlignment="Top" Width="340"/>
 
     </Grid>
 </Window>

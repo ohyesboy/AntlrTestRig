@@ -64,6 +64,8 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="AppArgHelper.cs" />
+    <Compile Include="AppArgs.cs" />
     <Compile Include="MyErrorListener.cs" />
     <Compile Include="DisplayNodePositioner.cs" />
     <Compile Include="ParseTreeView.xaml.cs">
