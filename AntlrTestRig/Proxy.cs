@@ -9,6 +9,13 @@ using Antlr4.Runtime.Tree;
 
 namespace AntlrTestRig
 {
+    [Serializable]
+    class ProxyProcessOutput
+    {
+        public DisplayNode Model;
+        public List<string> LastContextNameStack = new List<string>(); //last context and its parents' name
+    }
+
     /// <summary>
     /// A proxy live in a new domain can access loaded dlls and be unloaded along the new domain
     /// </summary>
@@ -50,7 +57,7 @@ namespace AntlrTestRig
 
         }
 
-        public DisplayNode ProcessInput(string inputText, AppArgs args)
+        public ProxyProcessOutput ProcessInput(string inputText, AppArgs args)
         {
             var input = new AntlrInputStream(inputText);
             var allTypes = _assemblies.SelectMany(x => x.GetTypes()).ToArray();
@@ -112,9 +119,21 @@ namespace AntlrTestRig
                 Console.WriteLine(rootContext.ToStringTree(parser));
             }
 
-            return new DisplayNodeBuilder(errorListener.TokenExceptionMapping, errorListener.ContextTokenMapping, parser.RuleNames)
-                .GetDisplayNodeFromParseTree(rootContext, args.RuleIndex);
+            var visitor = new InfoCollectorVisitor();
+            ParseTreeWalker walker = new ParseTreeWalker();
+            walker.Walk(visitor, rootContext);
+         
+            var output = new ProxyProcessOutput();
+            RuleContext ctx = visitor.lastContext;
+            do
+            {
+                output.LastContextNameStack.Insert(output.LastContextNameStack.Count, parser.RuleNames[ctx.RuleIndex]);
+                ctx = ctx.Parent;
+            } while (ctx != null);
 
+            output.Model =  new DisplayNodeBuilder(errorListener.TokenExceptionMapping, errorListener.ContextTokenMapping, parser.RuleNames)
+                .GetDisplayNodeFromParseTree(rootContext, args.RuleIndex);
+            return output;
         }
 
     }

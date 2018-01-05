@@ -29,7 +29,7 @@ namespace AntlrTestRig
         private DisplayNode _rootNode;
         private const int AutoExpandTreeLevel = 5;
 
-        public MainWindow(DisplayNode model)
+        public MainWindow()
         {
             InitializeComponent();
         }

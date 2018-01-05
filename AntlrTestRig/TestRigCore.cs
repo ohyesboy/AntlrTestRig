@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Security.Policy;
 
 namespace AntlrTestRig
@@ -17,15 +18,16 @@ namespace AntlrTestRig
 
         public void ProcessInput(string inputText, AppArgs args)
         {
-            var model = _proxy.ProcessInput(inputText, args);
+            var output = _proxy.ProcessInput(inputText, args);
             if (args.ShowGui)
             {
                 if (_window == null)
                 {
-                    _window = new MainWindow(model);
+                    _window = new MainWindow();
                     _window.Show();
                 }
-                _window.UpdateModel(model);
+                _window.UpdateModel(output.Model);
+                _window.lbLastContext.Content = string.Join(" < ", output.LastContextNameStack);
             }
         }
 
