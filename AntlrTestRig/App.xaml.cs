@@ -25,6 +25,9 @@ namespace AntlrTestRig
         public bool Diagnoctics;
         public string Encoding;
         public string InputFile;
+        //Grammar dll folder, can be absolute or relative (to current folder),
+        //if not set, will use current folder.
+        public string TargetFolder; 
     }
 
     /// <summary>
@@ -37,7 +40,9 @@ namespace AntlrTestRig
         private List<string> DllBlackList = new List<string>()
         {
             "Antlr4.Runtime.Standard.dll"
-        }; 
+        };
+
+        private string dllDir;
         private Assembly[] _assemblies;
         protected override void OnStartup(StartupEventArgs e)
         {
@@ -46,7 +51,20 @@ namespace AntlrTestRig
             if (appArg == null)
                 ShowErrorAndExit(null);
 
-            LoadDll();
+            dllDir = Environment.CurrentDirectory;
+            if (!string.IsNullOrEmpty(appArg.TargetFolder))
+            {
+                if (!Path.IsPathRooted(appArg.TargetFolder))
+                {
+                    dllDir = Path.Combine(dllDir, appArg.TargetFolder);
+                }
+                else
+                {
+                    dllDir = appArg.TargetFolder;
+                }
+            }
+
+            LoadDll(dllDir);
             Process();
 
             if (appArg.InputFile != null)
@@ -56,17 +74,17 @@ namespace AntlrTestRig
                 inputWatcher.Changed += Watcher_Changed;
                 inputWatcher.EnableRaisingEvents = true;
 
-                FileSystemWatcher dllWatcher = new FileSystemWatcher(file.Directory.FullName, "*.dll");
+               
+                FileSystemWatcher dllWatcher = new FileSystemWatcher(dllDir, "*.dll");
                 dllWatcher.Changed += DllWatcher_Changed;
                 dllWatcher.EnableRaisingEvents = true;
             }
           
         }
 
-        private void LoadDll()
+        private void LoadDll(string dllDir)
         {
-           
-            _assemblies = Directory.GetFiles(Environment.CurrentDirectory, "*.dll")
+            _assemblies = Directory.GetFiles(dllDir, "*.dll")
                 .Where(x => (!DllBlackList.Contains(Path.GetFileName(x))))
                 .Select(x =>
                 {
@@ -101,8 +119,7 @@ namespace AntlrTestRig
             {
                 ShowErrorAndExit(err.Message);
             }
-            if (callback != null)
-                callback();
+            callback?.Invoke();
         }
         private void Watcher_Changed(object sender, FileSystemEventArgs e)
         {
@@ -124,8 +141,11 @@ namespace AntlrTestRig
         {
             var watcher = (FileSystemWatcher)sender;
             watcher.EnableRaisingEvents = false;
-            Console.WriteLine("\r\nDll changes detected in {0} -- {1}", e.Name, DateTime.Now.ToString("hh:mm:ss"));
-            LoadDll();
+
+            int reloadDelay = 1; //when the first dll file changed, there may be other dlls being compiled
+            Console.WriteLine("\r\nDll changes detected in {0} -- {1}, reloading dlls in {2} seconds", e.Name, DateTime.Now.ToString("hh:mm:ss"), reloadDelay);
+            Thread.Sleep(reloadDelay*1000);
+            LoadDll(dllDir);
             this.Dispatcher.Invoke(()=>Process(() =>
             {
                 watcher.EnableRaisingEvents = true;
@@ -169,6 +189,7 @@ namespace AntlrTestRig
                 sb.AppendLine("AntlrTestRig.exe GrammarName startRuleName\n" +
                                    "  [-tokens] [-tree] [-gui] [-ps file.ps] [-encoding encodingname]\n" +
                                    "  [-trace] [-diagnostics] [-SLL]\n" +
+                                   "  [-folder]\n" +
                                    "  [input-filename(s)]");
                 sb.AppendLine("Use startRuleName='tokens' if GrammarName is a lexer grammar.");
                 sb.AppendLine("Omitting input-filename makes rig read from stdin, end with Ctrl+Z and Enter");
@@ -222,6 +243,17 @@ namespace AntlrTestRig
                         return null;
                     }
                     appArg.Encoding = args[i];
+                    i++;
+                }
+
+                else if (arg.Equals("-folder"))
+                {
+                    if (i >= args.Length)
+                    {
+                        Console.WriteLine("missing encoding on -folder");
+                        return null;
+                    }
+                    appArg.TargetFolder = args[i];
                     i++;
                 }
                 else if (arg.Equals("-showtype"))
