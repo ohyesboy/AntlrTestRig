@@ -18,7 +18,7 @@ This project aimed to mimic the official ANTLR4 TestRig which looks like this:
   * Use different color for terminal nodes
   * Watch input file change and reload
   * Watch dll file change and reload
-  * Show rule index and token type (with -showtype option)
+  * Show rule index and token type (with -ruleindex option)
 
 
 ## TODO:

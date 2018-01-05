@@ -114,9 +114,9 @@ namespace AntlrTestRig
                     appArg.Folder = args[i];
                     i++;
                 }
-                else if (arg.Equals("-showtype"))
+                else if (arg.Equals("-ruleindex"))
                 {
-                    appArg.ShowType = true;
+                    appArg.RuleIndex = true;
                 }
             }
 

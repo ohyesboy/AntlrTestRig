@@ -66,6 +66,7 @@
     </ApplicationDefinition>
     <Compile Include="AppArgHelper.cs" />
     <Compile Include="AppArgs.cs" />
+    <Compile Include="DisplayNodeBuilder.cs" />
     <Compile Include="MyErrorListener.cs" />
     <Compile Include="DisplayNodePositioner.cs" />
     <Compile Include="ParseTreeView.xaml.cs">

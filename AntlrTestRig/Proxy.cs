@@ -12,18 +12,16 @@ namespace AntlrTestRig
     /// <summary>
     /// A proxy live in a new domain can access loaded dlls and be unloaded along the new domain
     /// </summary>
-    public class Proxy : MarshalByRefObject
+    class Proxy : MarshalByRefObject
     {
         private List<string> _dllBlackList = new List<string>()
         {
             "Antlr4.Runtime.Standard.dll"
         };
+
         private Assembly[] _assemblies;
-      
-        private Dictionary<IToken, RecognitionException> _tokenExceptions;
-        private Dictionary<ParserRuleContext, IToken> _contextTokenMapping;
-        public const String LEXER_START_RULE_NAME = "tokens";
-        private string[] _ruleNames;
+        private const String LEXER_START_RULE_NAME = "tokens";
+    
 
         public void LoadDlls(string assemblyPath)
         {
@@ -81,7 +79,6 @@ namespace AntlrTestRig
                 throw new ApplicationException(string.Format("Parser {0} not found.", args.GrammarName));
             var parser = (Parser)Activator.CreateInstance(parserType, new object[] { commonTokenStream });
 
-            _ruleNames = parser.RuleNames;
 
             if (args.Diagnoctics)
             {
@@ -104,84 +101,20 @@ namespace AntlrTestRig
             var errorListener = new MyErrorListener();
             parser.AddErrorListener(errorListener);
 
-            _tokenExceptions = errorListener.TokenExceptionMapping;
-            _contextTokenMapping = errorListener.ContextTokenMapping;
-
             MethodInfo rootMethod = parserType.GetMethod(args.StartRuleName);
             if (rootMethod == null)
                 throw new ApplicationException($"Start rule \"{args.StartRuleName}\" does not exist");
             IParseTree rootContext;
-            try
-            {
-                rootContext = (IParseTree)rootMethod.Invoke(parser, new object[] { });
-            }
-            catch (TargetInvocationException err)
-            {
-                throw err;
-            }
-
-
+            rootContext = (IParseTree)rootMethod.Invoke(parser, new object[] { });
 
             if (args.ShowTree)
             {
                 Console.WriteLine(rootContext.ToStringTree(parser));
             }
 
+            return new DisplayNodeBuilder(errorListener.TokenExceptionMapping, errorListener.ContextTokenMapping, parser.RuleNames)
+                .GetDisplayNodeFromParseTree(rootContext, args.RuleIndex);
 
-            return GetDisplayNodeFromParseTree(rootContext, args.ShowType);
-
-        }
-  
-        private DisplayNode GetDisplayNodeFromParseTree(IParseTree node, bool showType)
-        {
-            var model = new DisplayNode();
-
-            if (node is TerminalNodeImpl)
-            {
-                var tNode = node as TerminalNodeImpl;
-                model.String = tNode.GetText();
-                if (showType)
-                    model.String += " = " + tNode.Symbol.Type;
-                model.IsToken = true;
-                if (_tokenExceptions.ContainsKey(tNode.Symbol) || tNode.Symbol.TokenIndex == -1)
-                {
-                    model.HasError = true;
-                }
-
-            }
-            else
-            {
-                var ruleNode = node as ParserRuleContext;
-
-                //Add token to context if context does not have child,
-                //This handels the extraneous token
-                if (_contextTokenMapping.ContainsKey(ruleNode))
-                {
-                    var token = _contextTokenMapping[ruleNode];
-                    model.HasError = true;
-                    if (token.Type != -1 && node.ChildCount == 0)
-                    {
-                        var errorTokenNode = new DisplayNode();
-                        errorTokenNode.HasError = true;
-                        errorTokenNode.IsToken = true;
-                        errorTokenNode.String = token.Text;
-                        model.Children.Add(errorTokenNode);
-                    }
-
-                }
-
-                model.String = _ruleNames[ruleNode.RuleIndex];
-                if (showType)
-                    model.String += " = " + ruleNode.RuleIndex;
-            }
-
-            for (int i = 0; i < node.ChildCount; i++)
-            {
-                var subAstNode = GetDisplayNodeFromParseTree(node.GetChild(i), showType);
-                model.Children.Add(subAstNode);
-            }
-
-            return model;
         }
 
     }

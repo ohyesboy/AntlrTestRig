@@ -8,7 +8,7 @@ namespace AntlrTestRig
         public string GrammarName;
         public string StartRuleName;
         public bool ShowGui;
-        public bool ShowType;
+        public bool RuleIndex;
         public bool ShowTokens;
         public bool ShowTree;
         public bool Trace;
