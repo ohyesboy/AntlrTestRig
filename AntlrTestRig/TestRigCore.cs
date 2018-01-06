@@ -27,7 +27,7 @@ namespace AntlrTestRig
                     _window.Show();
                 }
                 _window.UpdateModel(output.Model);
-                _window.lbLastContext.Content = string.Join(" < ", output.LastContextNameStack);
+                _window.lbLastContext.Content = $"[{output.LastContextToken}]   {string.Join(" < ", output.LastContextNameStack)}";
             }
         }
 

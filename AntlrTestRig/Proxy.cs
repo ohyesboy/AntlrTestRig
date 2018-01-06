@@ -14,6 +14,7 @@ namespace AntlrTestRig
     {
         public DisplayNode Model;
         public List<string> LastContextNameStack = new List<string>(); //last context and its parents' name
+        public string LastContextToken;
     }
 
     /// <summary>
@@ -124,12 +125,13 @@ namespace AntlrTestRig
             {
                 Console.WriteLine(rootContext.ToStringTree(parser));
             }
-
+            
             var visitor = new InfoCollectorVisitor();
             ParseTreeWalker walker = new ParseTreeWalker();
             walker.Walk(visitor, rootContext);
          
             var output = new ProxyProcessOutput();
+            output.LastContextToken = $"{visitor.lastContext.Start.StartIndex}:{visitor.lastContext.Stop.StopIndex} {visitor.lastContext.GetText()}";
             RuleContext ctx = visitor.lastContext;
             do
             {
