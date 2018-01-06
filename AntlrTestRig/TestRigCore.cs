@@ -28,6 +28,8 @@ namespace AntlrTestRig
                 }
                 _window.UpdateModel(output.Model);
                 _window.lbLastContext.Content = $"[{output.LastContextToken}]   {string.Join(" < ", output.LastContextNameStack)}";
+
+                _window.lbLastErrorContext.Content = $"[{output.LastErrorContextToken}]  ";
             }
         }
 

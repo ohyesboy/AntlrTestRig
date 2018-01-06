@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Atn;
+using Antlr4.Runtime.Misc;
 using Antlr4.Runtime.Tree;
 
 namespace AntlrTestRig
@@ -15,6 +16,7 @@ namespace AntlrTestRig
         public DisplayNode Model;
         public List<string> LastContextNameStack = new List<string>(); //last context and its parents' name
         public string LastContextToken;
+        public string LastErrorContextToken;
     }
 
     /// <summary>
@@ -126,13 +128,16 @@ namespace AntlrTestRig
                 Console.WriteLine(rootContext.ToStringTree(parser));
             }
             
-            var visitor = new InfoCollectorVisitor();
+            var visitor = new InfoCollectorVisitor(errorListener.ContextTokenMapping);
             ParseTreeWalker walker = new ParseTreeWalker();
             walker.Walk(visitor, rootContext);
          
             var output = new ProxyProcessOutput();
-            output.LastContextToken = $"{visitor.lastContext.Start.StartIndex}:{visitor.lastContext.Stop.StopIndex} {visitor.lastContext.GetText()}";
-            RuleContext ctx = visitor.lastContext;
+            output.LastContextToken = $"{visitor.LastContext.Start.StartIndex}:{visitor.LastContext.Stop.StopIndex} {visitor.LastContext.GetText()}";
+            if(visitor.LastErrorContext!=null)
+                output.LastErrorContextToken = 
+                    $"{visitor.LastErrorContext.Start.StartIndex}:{visitor.LastErrorContext.Stop.StopIndex} {GetSourceText(visitor.LastErrorContext)} ({parser.RuleNames[visitor.LastErrorContext.RuleIndex]})";
+            RuleContext ctx = visitor.LastContext;
             do
             {
                 output.LastContextNameStack.Insert(output.LastContextNameStack.Count, parser.RuleNames[ctx.RuleIndex]);
@@ -144,5 +149,13 @@ namespace AntlrTestRig
             return output;
         }
 
+        private string GetSourceText(ParserRuleContext ctx)
+        {
+            int a = ctx.Start.StartIndex;
+            int b = ctx.Stop.StopIndex;
+            Interval interval = new Interval(a, b);
+            string str = ctx.Start.InputStream.GetText(interval);
+            return str;
+        }
     }
 }

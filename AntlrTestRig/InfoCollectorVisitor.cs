@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
 
@@ -5,27 +6,34 @@ namespace AntlrTestRig
 {
     public class InfoCollectorVisitor : IParseTreeListener
     {
-        public ParserRuleContext lastContext;
-       
+        Dictionary<ParserRuleContext, IToken> ContextTokenMapping;
+        public InfoCollectorVisitor(Dictionary<ParserRuleContext, IToken> ContextTokenMapping)
+        {
+            this.ContextTokenMapping = ContextTokenMapping;
+        }
+        public ParserRuleContext LastContext;
+        public ParserRuleContext LastErrorContext;
         public void VisitTerminal(ITerminalNode node)
         {
-            //throw new NotImplementedException();
+           
         }
 
         public void VisitErrorNode(IErrorNode node)
         {
-            //throw new NotImplementedException();
+           
         }
 
         public void EnterEveryRule(ParserRuleContext ctx)
         {
-            lastContext = ctx;
-            //throw new NotImplementedException();
+            LastContext = ctx;
+            if (ctx.exception != null || ContextTokenMapping.ContainsKey(ctx))
+                LastErrorContext = ctx;
+      
         }
 
         public void ExitEveryRule(ParserRuleContext ctx)
         {
-            //throw new NotImplementedException();
+           
         }
     }
 }
