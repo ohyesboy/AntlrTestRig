@@ -21,6 +21,13 @@ namespace AntlrTestRig
     /// </summary>
     class Proxy : MarshalByRefObject
     {
+        //https://social.msdn.microsoft.com/Forums/en-US/3ab17b40-546f-4373-8c08-f0f072d818c9/remotingexception-when-raising-events-across-appdomains?forum=netfxremoting
+        //Solve the issue that after a few minutes idle, proxy object throws RemotingException 
+        public override object InitializeLifetimeService()
+        {
+            return null;
+        }
+
         private List<string> _dllBlackList = new List<string>()
         {
             "Antlr4.Runtime.Standard.dll"
@@ -37,7 +44,6 @@ namespace AntlrTestRig
                 .Select(x =>
                 {
 
-                    GC.Collect();// make sure no dll is locked by any object not collected.
                     byte[] assemblyBytes = null;
                     try
                     {
