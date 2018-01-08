@@ -16,6 +16,10 @@ namespace AntlrTestRig
         public DisplayNode Model;
         public List<string> LastContextNameStack = new List<string>(); //last context and its parents' name
         public string LastContextToken;
+
+        public List<string> LastNonErrorContextNameStack = new List<string>(); //last non error context and its parents' name
+        public string LastNonErrorContextToken;
+
         public string LastErrorContextToken;
     }
 
@@ -133,16 +137,34 @@ namespace AntlrTestRig
             walker.Walk(visitor, rootContext);
          
             var output = new ProxyProcessOutput();
-            output.LastContextToken = $"{visitor.LastContext.Start.StartIndex}:{visitor.LastContext.Stop.StopIndex} {visitor.LastContext.GetText()}";
-            if(visitor.LastErrorContext!=null)
-                output.LastErrorContextToken = 
-                    $"{visitor.LastErrorContext.Start.StartIndex}:{visitor.LastErrorContext.Stop.StopIndex} {GetSourceText(visitor.LastErrorContext)} ({parser.RuleNames[visitor.LastErrorContext.RuleIndex]})";
-            RuleContext ctx = visitor.LastContext;
+
+            //last non error context
+            output.LastNonErrorContextToken = $"{visitor.LastNonErrorContext.Start.StartIndex}:{visitor.LastNonErrorContext.Stop?.StopIndex} {visitor.LastNonErrorContext.GetText()}";
+
+            RuleContext ctx = visitor.LastNonErrorContext;
+            do
+            {
+                output.LastNonErrorContextNameStack.Insert(output.LastNonErrorContextNameStack.Count, parser.RuleNames[ctx.RuleIndex]);
+                ctx = ctx.Parent;
+            } while (ctx != null);
+
+
+            //last context
+            output.LastContextToken = $"{visitor.LastContext.Start.StartIndex}:{visitor.LastContext.Stop?.StopIndex} {visitor.LastContext.GetText()}";
+
+            ctx = visitor.LastContext;
             do
             {
                 output.LastContextNameStack.Insert(output.LastContextNameStack.Count, parser.RuleNames[ctx.RuleIndex]);
                 ctx = ctx.Parent;
             } while (ctx != null);
+
+
+
+            //Last error context
+            if (visitor.LastErrorContext != null)
+                output.LastErrorContextToken =
+                    $"{visitor.LastErrorContext.Start.StartIndex}:{visitor.LastErrorContext.Stop?.StopIndex} {GetSourceText(visitor.LastErrorContext)} ({parser.RuleNames[visitor.LastErrorContext.RuleIndex]})";
 
             output.Model =  new DisplayNodeBuilder(errorListener.TokenExceptionMapping, errorListener.ContextTokenMapping, parser.RuleNames)
                 .GetDisplayNodeFromParseTree(rootContext, args.RuleIndex);
@@ -151,6 +173,8 @@ namespace AntlrTestRig
 
         private string GetSourceText(ParserRuleContext ctx)
         {
+            if (ctx.Stop == null)//empty input
+                return "";
             int a = ctx.Start.StartIndex;
             int b = ctx.Stop.StopIndex;
             Interval interval = new Interval(a, b);

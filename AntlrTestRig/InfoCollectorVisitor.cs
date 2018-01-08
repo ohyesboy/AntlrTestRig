@@ -13,6 +13,7 @@ namespace AntlrTestRig
         }
         public ParserRuleContext LastContext;
         public ParserRuleContext LastErrorContext;
+        public ParserRuleContext LastNonErrorContext;
         public void VisitTerminal(ITerminalNode node)
         {
            
@@ -28,7 +29,10 @@ namespace AntlrTestRig
             LastContext = ctx;
             if (ctx.exception != null || ContextTokenMapping.ContainsKey(ctx))
                 LastErrorContext = ctx;
-      
+            else
+                LastNonErrorContext = ctx;
+
+
         }
 
         public void ExitEveryRule(ParserRuleContext ctx)
