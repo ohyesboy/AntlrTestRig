@@ -3,8 +3,10 @@
 /*/obj/
 packages/*
 *.user
+*.interp
 *.pdb
 *.suo
 demoGrammar/*.cs
 demoGrammar/*.dll
 demoGrammar/*.tokens
+/.vs
