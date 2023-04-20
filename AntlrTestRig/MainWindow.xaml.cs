@@ -38,6 +38,8 @@ namespace AntlrTestRig
         {
             _rootNode = model;
             nodeTree.Items.Clear();
+            if (_rootNode == null)
+                return;
             PopulateTree(_rootNode, 0);
             view.ShowNodeTree(_rootNode, slider.Value);
         }

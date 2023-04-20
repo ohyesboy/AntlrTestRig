@@ -139,6 +139,8 @@ namespace AntlrTestRig
             var output = new ProxyProcessOutput();
 
             //last non error context
+            if (visitor.LastNonErrorContext == null)
+                return output;
             output.LastNonErrorContextToken = $"{visitor.LastNonErrorContext.Start.StartIndex}:{visitor.LastNonErrorContext.Stop?.StopIndex} {visitor.LastNonErrorContext.GetText()}";
 
             RuleContext ctx = visitor.LastNonErrorContext;

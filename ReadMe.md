@@ -49,10 +49,10 @@ This project aimed to mimic the official ANTLR4 TestRig which looks like this:
 Note you are encouraged to create shortcut to make less typing, I have one like this in **acs.bat** (stands for ANTLR+csharp) in the %PATH%
 
 ```
-@call antlr4 -Dlanguage=CSharp %1.g4
+@call antlr4 -Dlanguage=CSharp *.g4
 @if %errorlevel% neq 0 exit /b %errorlevel%
 
-@call csc /target:library /out:%1.dll  /reference:Antlr4.Runtime.Standard.dll %1*.cs
+@call csc /target:library /out:%1.dll  /reference:Antlr4.Runtime.Standard.dll *.cs
 @if %errorlevel% neq 0 exit /b %errorlevel%
 ```
 
